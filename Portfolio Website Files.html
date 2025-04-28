@@ -1,0 +1,402 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - David Owolabi</title>
+    <link rel="icon" href="david.jpg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            scroll-behavior: smooth;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            display: inline-block;
+        }
+
+        nav ul {
+            list-style: none;
+            display: inline-block;
+            margin-left: 2rem;
+        }
+
+        nav ul li {
+            display: inline;
+            margin-right: 1rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #007bff;
+        }
+
+        #hero {
+            height: 60vh;
+            background: linear-gradient(to right,black, gold);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeIn 2s ease-in;
+        }
+
+        #hero h2 {
+            font-size: 3rem;
+            animation: slideUp 1s ease-out;
+        }
+
+        .section {
+            padding: 4rem 2rem;
+            background-color: #fff;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .portfolio-item {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portfolio-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .portfolio-item img {
+            width: 25%;
+            height: auto;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        form label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        form input, form textarea {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+
+        form input:focus, form textarea:focus {
+            border-color: #007bff;
+        }
+
+        form button {
+            background: linear-gradient(to right,black, gold);;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        form button:hover {
+            background: linear-gradient(to right,black, rgb(255, 222, 33));;
+        }
+
+        footer {
+            padding: 1rem;
+            background-color: #fff;
+            background: linear-gradient(to right,black, gold);
+            color: #fefbfb;
+            .con{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                a{
+                    color: white;
+                }
+            }
+        }
+        .con > p:hover{
+            text-decoration: underline;
+        }
+
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .lightbox.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            background-color: #fff;
+            padding: 1rem;
+        }
+
+        .lightbox-content img, .lightbox-content iframe {
+            width: 100%;
+            height: auto;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1cm;
+            cursor: pointer;
+            color: #fefbfb;
+        }
+
+        @media (max-width: 600px) {
+            nav ul {
+                display: block;
+                margin-left: 0;
+            }
+            nav ul li {
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><img src="david.jpg" alt="The man" width="50" style="border-radius: 50; border: #333 solid 8px;"> David Owolabi</h1>
+        <nav>
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#portfolio">Portfolio</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section id="hero">
+            <h2>Welcome to My Portfolio</h2>
+        </section>
+        <section id="about" class="section">
+            <h2>About Me</h2>
+            <p>I'm a passionate digital artist, video editor, and graphic designer with ample experience creating bold, engaging visuals. I specialize in blending creativity with technical skill to craft content that tells a story, captures attention, and leaves a lasting impression. Whether designing graphics, editing videos, or producing digital art, I’m committed to delivering work that stands out and connects with audiences.</p>
+        </section>
+        <section id="portfolio" class="section">
+            <h2>Portfolio</h2>
+            <div class="portfolio-grid"></div>
+        </section>
+    </main>
+       
+        
+    
+    <footer>
+        <p>© 2025 Davidoowolabi</p>
+        <div class="con">
+            <p>Email : <a href="http://davidowolabi252@gmail.com" target="_blank">davidowolabi252@gmail.com</a></p><p>Call & Whatsapp : 08080767738</p>
+        </div>
+    </footer>
+    <script>
+        const portfolioItems = [
+            {
+                type: 'image',
+                thumbnail: 'Tbn.jpg',
+                full: 'Business card back.jpg',
+                title: 'Digital Artwork 1'
+            },
+            {
+                type: 'video',
+                thumbnail: 'tbn2.jpg',
+                full: 'final project shoe.mp4',
+                title: 'Final Project Shoe(AD)'
+            }
+            // Add more items here
+        ];
+
+        const portfolioGrid = document.querySelector('.portfolio-grid');
+
+        portfolioItems.forEach(item => {
+            const div = document.createElement('div');
+            div.classList.add('portfolio-item');
+            div.innerHTML = `
+                <img src="${item.thumbnail}" alt="${item.title}">
+                <h3>${item.title}</h3>
+            `;
+            div.addEventListener('click', () => openLightbox(item));
+            portfolioGrid.appendChild(div);
+        });
+
+        function openLightbox(item) {
+            const modal = document.createElement('div');
+            modal.classList.add('lightbox');
+            modal.innerHTML = `
+                <div class="lightbox-content">
+                    ${item.type === 'image' ? `<img src="${item.full}" alt="${item.title}">` : `<div class="video-wrapper"><iframe src="${item.full}" frameborder="0" allowfullscreen></iframe></div>`}
+                    <h3>${item.title}</h3>
+                    <button class="close-button">X</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('visible'), 10);
+            modal.querySelector('.close-button').addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.querySelector('.lightbox')) {
+                document.querySelector('.lightbox').remove();
+            }
+        });
+
+        const sections = document.querySelectorAll('.section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        sections.forEach(section => observer.observe(section));
+
+        const form = document.getElementById('contact-form');
+        form.addEventListener('submit', (e) => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            if (!name || !email || !message) {
+                e.preventDefault();
+                alert('Please fill in all fields.');
+            }
+        });
+    </script>
+</body>
+</html>
